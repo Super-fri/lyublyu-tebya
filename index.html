@@ -13,6 +13,7 @@
   </head>
   <body>
     <div class="wallpaper" aria-hidden="true"></div>
+    <div id="goldRain" class="gold-rain" aria-hidden="true"></div>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand">
@@ -43,6 +44,7 @@
 
           <div class="bear-stage" id="bearStage">
             <div class="bear-glow" aria-hidden="true"></div>
+            <div id="goldTitle" class="golden-title" hidden>Золотая бесконечность</div>
             <div id="heartParticles" class="heart-particles" aria-hidden="true"></div>
             <button id="tapButton" class="bear-button" type="button" aria-label="Нажми на мишку, чтобы получить сердечки">
               <img id="teddy" src="assets/teddy-hd.svg" alt="Мягкий коричневый мишка" draggable="false" />
@@ -115,6 +117,20 @@
         <p>Это первый мишка, которого я тебе подарил ;3</p>
         <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
         <div class="welcome-actions"><button id="halloweenOkButton" class="button-love" type="button">Окей <span>♥</span></button></div>
+      </div>
+    </div>
+
+    <div id="flowersWelcome" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="flowersTitle" aria-describedby="flowersMessage" hidden>
+      <div class="welcome-card golden-card">
+        <div class="welcome-top-heart golden-icon" aria-hidden="true">💐</div>
+        <div class="welcome-eyebrow">ты прошла мою игру</div>
+        <h1 id="flowersTitle">Спасибо, что поиграла!</h1>
+        <p id="flowersMessage">Спасибо, что поиграла в мою игру. Если захочешь, ты так же можешь её установить — значок установки вверху. Люблю тебя очень ❤️</p>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions">
+          <button id="flowersDismissButton" class="button-soft" type="button">дыыы</button>
+          <button id="goldenLoveButton" class="button-gold" type="button">я тя тоже люблю ♥</button>
+        </div>
       </div>
     </div>
 

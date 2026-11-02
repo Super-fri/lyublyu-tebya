@@ -4,7 +4,9 @@
   const SAVE_KEY = "lyublyu-tebya-save-v1";
   const MAX_OFFLINE_SECONDS = 12 * 60 * 60;
   const OFFLINE_LIMIT_MS = 10 * 60 * 1000;
+  const GOLDEN_DURATION_MS = 10 * 60 * 1000;
   const MAX_PARTICLES = 40;
+  const MAX_GOLD_BARS = 22;
 
   const bears = [
     { id: "classic", name: "Мягкий мишка", cost: 0, image: "assets/teddy-hd.svg", icon: "♥", tagline: "Тёплые объятия и сердечки только для тебя.", description: "Добрый друг для уютных предзимних вечеров.", base: 1, particles: ["♥"] },
@@ -13,9 +15,9 @@
     { id: "football", name: "Футбольный мишка", cost: 500, image: "assets/bears/football.webp", icon: "⚽", tagline: "Забивает гол прямо в сердечко!", description: "У каждого нажатия свой победный мяч.", base: 1, particles: ["⚽"] },
     { id: "halloween", name: "Хэллоуинский мишка", cost: 600, image: "assets/bears/halloween.webp", icon: "🦇", tagline: "Летучие мышки и в полтора раза больше любви.", description: "Праздничная магия складывается со всеми усилениями.", base: 1, multiplier: 1.5, particles: ["🦇"] },
     { id: "love", name: "Love U Mode", cost: 1000, image: "assets/bears/love-u.webp", icon: "💘", tagline: "Любовный режим включён на полную!", description: "Тройная любовь поверх остальных усилений.", base: 1, multiplier: 3, particles: ["💘"] },
-    { id: "luck", name: "Luck ground мишка", cost: 1500, image: "assets/bears/luck-ground.webp", icon: "🍀", tagline: "Какой подарок выпадет в этот раз?", description: "5% — 100, 30% — 10, 65% — 2 сердечка.", randomReward: true, multiplier: 1, particles: ["🍀", "✨"] },
-    { id: "polar", name: "Polar мишка", cost: 2000, image: "assets/bears/polar.webp", icon: "❄️", tagline: "Самый уютный холод севера.", description: "Дарит 30 сердечек за тап, плюс твои усиления.", base: 30, particles: ["❄️", "🩵"] },
-    { id: "flowers", name: "Мишка с цветами", cost: 3000, image: "assets/bears/flowers.webp", icon: "💐", tagline: "Цветы, сердечки и немного волшебства.", description: "100 сердечек и цветы. Раз в 10 минут — шанс 10% получить x3 на 10 секунд.", base: 100, flowers: true, particles: ["🌸", "💐"] },
+    { id: "luck", name: "Luck ground мишка", cost: 12000, image: "assets/bears/luck-ground.webp", icon: "🍀", tagline: "Какой подарок выпадет в этот раз?", description: "5% — 100, 30% — 10, 65% — 2 сердечка.", randomReward: true, multiplier: 1, particles: ["🍀", "✨"] },
+    { id: "polar", name: "Polar мишка", cost: 50000, image: "assets/bears/polar.webp", icon: "❄️", tagline: "Самый уютный холод севера.", description: "Дарит 30 сердечек за тап, плюс твои усиления.", base: 30, particles: ["❄️", "🩵"] },
+    { id: "flowers", name: "Мишка с цветами", cost: 100000, image: "assets/bears/flowers.webp", icon: "💐", tagline: "Цветы, сердечки и немного волшебства.", description: "100 сердечек и цветы. Раз в 10 минут — шанс 10% получить x3 на 10 секунд.", base: 100, flowers: true, particles: ["🌸", "💐"] },
   ];
 
   const upgrades = [
@@ -48,7 +50,7 @@
     hearts: 0, earned: 0, spent: 0, taps: 0,
     upgrades: { touch: 0, hugs: 0, power: 0 },
     unlockedBears: { classic: true }, activeBear: "classic",
-    flowerNextTryAt: 0, flowerBoostUntil: 0, lastSavedAt: Date.now(),
+    flowerNextTryAt: 0, flowerBoostUntil: 0, goldenUntil: 0, flowersEndingSeen: false, lastSavedAt: Date.now(),
   });
 
   function loadSave() {
@@ -57,19 +59,25 @@
       if (!saved || typeof saved !== "object") return emptySave();
       const base = emptySave();
       const merged = { ...base, ...saved, upgrades: { ...base.upgrades, ...(saved.upgrades || {}) }, unlockedBears: { ...base.unlockedBears, ...(saved.unlockedBears || {}) } };
+      merged.flowersEndingSeen = Boolean(merged.flowersEndingSeen);
       for (const key of ["hearts", "earned", "spent", "taps"]) merged[key] = Math.max(0, Number(merged[key]) || 0);
       for (const key of Object.keys(merged.upgrades)) merged.upgrades[key] = Math.max(0, Math.floor(Number(merged.upgrades[key]) || 0));
       for (const key of Object.keys(merged.unlockedBears)) merged.unlockedBears[key] = Boolean(merged.unlockedBears[key]);
       if (!bears.some(bear => bear.id === merged.activeBear && merged.unlockedBears[bear.id])) merged.activeBear = "classic";
       const now = Date.now();
+      merged.goldenUntil = Math.max(0, Number(merged.goldenUntil) || 0);
       const last = Number(merged.lastSavedAt) || now;
       const offlineSeconds = Math.max(0, Math.min(MAX_OFFLINE_SECONDS, (now - last) / 1000));
-      const awayHearts = Math.floor(offlineSeconds * merged.upgrades.hugs);
+      const offlineStart = now - offlineSeconds * 1000;
+      const goldenStart = merged.goldenUntil - GOLDEN_DURATION_MS;
+      const goldenOfflineSeconds = Math.max(0, Math.min(now, merged.goldenUntil) - Math.max(offlineStart, goldenStart)) / 1000;
+      const awayHearts = Math.floor(merged.upgrades.hugs * (offlineSeconds + goldenOfflineSeconds * 9));
       if (awayHearts > 0) {
         merged.hearts += awayHearts;
         merged.earned += awayHearts;
         merged.offlineHearts = awayHearts;
       }
+      if (merged.goldenUntil <= now) merged.goldenUntil = 0;
       merged.lastSavedAt = now;
       return merged;
     } catch {
@@ -78,12 +86,15 @@
   }
 
   const state = loadSave();
+  let pendingFlowersWelcome = Boolean(state.unlockedBears.flowers && !state.flowersEndingSeen);
   let activeView = "game";
   let shopCategory = "bears";
   let saveTimer = 0;
   let toastTimer = 0;
   let hudFrame = 0;
   let activeParticles = 0;
+  let goldRainTimer = 0;
+  const goldBars = new Set();
   let renderedBearId = "";
   let lastQuoteIndex = -1;
 
@@ -94,7 +105,10 @@
   const particlesLayer = $("heartParticles");
   const welcome = $("welcome");
   const halloweenWelcome = $("halloweenWelcome");
+  const flowersWelcome = $("flowersWelcome");
   const resetConfirm = $("resetConfirm");
+  const goldRain = $("goldRain");
+  const goldTitle = $("goldTitle");
 
   const punchAnimation = teddy.animate([
     { transform: "scale(1, 1) rotate(0deg)" },
@@ -124,7 +138,7 @@
   }
 
   function heartsPerSecond() {
-    return state.upgrades.hugs;
+    return state.upgrades.hugs * (state.goldenUntil > Date.now() ? 10 : 1);
   }
 
   function costFor(item) {
@@ -137,7 +151,7 @@
 
   function currentTapMultiplier(now = Date.now()) {
     const bear = currentBear();
-    return (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1);
+    return (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1) * (state.goldenUntil > now ? 10 : 1);
   }
 
   function levelFor(earned) {
@@ -185,6 +199,7 @@
   function updateHUD() {
     const bear = currentBear();
     const now = Date.now();
+    syncGoldenVisuals(now);
     setText("balance", formatNumber(state.hearts));
     setText("tapValue", `${bear.randomReward ? "~" : "+"}${formatNumber(expectedBearPayout(bear) * currentTapMultiplier(now))}`);
     setText("perSecond", formatNumber(heartsPerSecond()));
@@ -196,8 +211,15 @@
       $("tapHint").innerHTML = `нажми на мишку <span>${bear.icon}</span>`;
       renderedBearId = bear.id;
     }
-    const tagline = state.flowerBoostUntil > now ? `${bear.tagline} ✨ x3 ещё ${Math.ceil((state.flowerBoostUntil - now) / 1000)} сек.` : bear.tagline;
+    const effects = [];
+    if (state.goldenUntil > now) {
+      const secondsLeft = Math.ceil((state.goldenUntil - now) / 1000);
+      effects.push(`Золотая бесконечность ×10 · ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`);
+    }
+    if (state.flowerBoostUntil > now) effects.push(`цветочный x3 ещё ${Math.ceil((state.flowerBoostUntil - now) / 1000)} сек.`);
+    const tagline = effects.length ? `${bear.tagline} ✨ ${effects.join(" · ")}` : bear.tagline;
     setText("bearTagline", tagline);
+    goldTitle.hidden = state.goldenUntil <= now;
     const quoteIndex = Math.floor(state.taps / 6) % quotes.length;
     if (lastQuoteIndex !== quoteIndex) {
       setText("loveQuote", quotes[quoteIndex]);
@@ -292,6 +314,37 @@
     toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2400);
   }
 
+  function spawnGoldBar() {
+    if (goldBars.size >= MAX_GOLD_BARS) return;
+    const bar = document.createElement("span");
+    const duration = 8 + Math.random() * 5;
+    bar.className = "gold-bar";
+    bar.style.left = `${Math.random() * 100}%`;
+    bar.style.setProperty("--gold-duration", `${duration}s`);
+    bar.style.setProperty("--gold-drift", `${Math.round((Math.random() - .5) * 130)}px`);
+    bar.style.opacity = `${.6 + Math.random() * .4}`;
+    goldRain.appendChild(bar);
+    goldBars.add(bar);
+    window.setTimeout(() => {
+      bar.remove();
+      goldBars.delete(bar);
+    }, (duration + 1) * 1000);
+  }
+
+  function syncGoldenVisuals(now = Date.now()) {
+    const active = state.goldenUntil > now;
+    document.body.classList.toggle("golden-mode", active);
+    if (active && !goldRainTimer) {
+      spawnGoldBar();
+      goldRainTimer = window.setInterval(spawnGoldBar, 600);
+    } else if (!active && goldRainTimer) {
+      window.clearInterval(goldRainTimer);
+      goldRainTimer = 0;
+      goldRain.replaceChildren();
+      goldBars.clear();
+    }
+  }
+
   function spawnParticles(bear) {
     if (activeParticles >= MAX_PARTICLES) return;
     const glyphs = [...(bear.particles || ["♥"])];
@@ -382,18 +435,38 @@
     state.spent += bear.cost;
     state.unlockedBears[id] = true;
     state.activeBear = id;
+    if (id === "flowers") state.flowersEndingSeen = true;
     renderedBearId = "";
     renderShop();
     updateHUD();
     persist();
     if (id === "halloween") halloweenWelcome.hidden = false;
+    else if (id === "flowers") flowersWelcome.hidden = false;
     else showToast(`${bear.name} теперь с тобой! ♥`);
+  }
+
+  function closeFlowersWelcome(startGoldenEvent = false) {
+    flowersWelcome.hidden = true;
+    activeView = "game";
+    if (startGoldenEvent) state.goldenUntil = Date.now() + GOLDEN_DURATION_MS;
+    render();
+    if (startGoldenEvent) {
+      persist();
+      spawnParticles(currentBear());
+      showToast("Золотая бесконечность! x10 на 10 минут ✨");
+    }
   }
 
   function continueFromWelcome() {
     welcome.hidden = true;
     activeView = "game";
     render();
+    if (pendingFlowersWelcome) {
+      pendingFlowersWelcome = false;
+      state.flowersEndingSeen = true;
+      persist();
+      flowersWelcome.hidden = false;
+    }
   }
 
   function resetProgress() {
@@ -408,6 +481,7 @@
     }
     Object.assign(state, emptySave());
     delete state.offlineHearts;
+    pendingFlowersWelcome = false;
     activeView = "game";
     shopCategory = "bears";
     renderedBearId = "";
@@ -445,6 +519,8 @@
     spawnParticles(currentBear());
   });
   $("halloweenOkButton").addEventListener("click", () => { halloweenWelcome.hidden = true; });
+  $("flowersDismissButton").addEventListener("click", () => closeFlowersWelcome());
+  $("goldenLoveButton").addEventListener("click", () => closeFlowersWelcome(true));
   $("resetProgressButton").addEventListener("click", () => {
     resetConfirm.hidden = false;
     $("cancelResetButton").focus();
@@ -473,15 +549,20 @@
   window.setInterval(() => {
     const now = Date.now();
     let changed = false;
-    if (heartsPerSecond() > 0) {
-      state.hearts += heartsPerSecond();
-      state.earned += heartsPerSecond();
+    const passiveHearts = heartsPerSecond();
+    if (passiveHearts > 0) {
+      state.hearts += passiveHearts;
+      state.earned += passiveHearts;
       changed = true;
     }
     if (state.flowerBoostUntil > 0 && state.flowerBoostUntil <= now) {
       state.flowerBoostUntil = 0;
       changed = true;
     }
+    if (state.goldenUntil > 0 && state.goldenUntil <= now) {
+      state.goldenUntil = 0;
+      changed = true;
+    } else if (state.goldenUntil > now) queueHUDUpdate();
     if (changed) {
       queueHUDUpdate();
       scheduleSave();

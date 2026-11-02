@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Люблю тебя",
+  "short_name": "Люблю тебя",
+  "description": "Маленькая игра, сделанная с любовью.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0e1720",
+  "background_color": "#0e1720",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

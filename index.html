@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0e1720" />
+    <meta name="description" content="Маленькая игра, сделанная с любовью." />
+    <link rel="icon" href="assets/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Люблю тебя</title>
+  </head>
+  <body>
+    <div class="wallpaper" aria-hidden="true"></div>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand-icon" src="assets/icon-192.png" alt="" />
+          <div>
+            <div class="brand-name">Люблю тебя</div>
+            <div class="brand-note">маленькая игра для тебя</div>
+          </div>
+        </div>
+        <div class="balance" aria-live="polite" aria-label="Твои сердечки">
+          <span class="balance-heart" aria-hidden="true">♥</span>
+          <span id="balance">0</span>
+        </div>
+      </header>
+
+      <main>
+        <section id="gameView" class="view game-view" aria-label="Игра">
+          <div class="hello-line"><span class="tiny-sparkle">✦</span> для самой любимой <span class="tiny-sparkle">✦</span></div>
+          <div class="love-card">
+            <div class="love-heading">Сердечки для тебя</div>
+            <div class="love-subtitle">Каждое нажатие — ещё одно «люблю»</div>
+            <div class="level-row">
+              <span id="levelName">Маленькое чудо</span>
+              <span id="levelProgressText">0 / 25</span>
+            </div>
+            <div class="progress-track"><div id="levelProgress" class="progress-fill"></div></div>
+          </div>
+
+          <div class="bear-stage" id="bearStage">
+            <div class="bear-glow" aria-hidden="true"></div>
+            <div id="heartParticles" class="heart-particles" aria-hidden="true"></div>
+            <button id="tapButton" class="bear-button" type="button" aria-label="Нажми на мишку, чтобы получить сердечки">
+              <img id="teddy" src="assets/teddy.png" alt="Игрушечный мишка" draggable="false" />
+            </button>
+            <div id="tapHint" class="tap-hint">нажми на мишку <span>♡</span></div>
+          </div>
+
+          <div class="game-stats">
+            <div class="stat-card"><span class="stat-icon">♡</span><span class="stat-value" id="tapValue">+1</span><span class="stat-label">за нажатие</span></div>
+            <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-card"><span class="stat-icon">⌁</span><span class="stat-value" id="perSecond">0</span><span class="stat-label">в секунду</span></div>
+            <div class="stat-divider" aria-hidden="true"></div>
+            <div class="stat-card"><span class="stat-icon">✧</span><span class="stat-value" id="tapCount">0</span><span class="stat-label">объятий</span></div>
+          </div>
+
+          <div class="love-note"><span>♥</span> мишка передаёт тебе привет</div>
+        </section>
+
+        <section id="shopView" class="view shop-view" aria-label="Магазин улучшений" hidden>
+          <div class="shop-intro">
+            <span class="shop-kicker">МАГАЗИН НЕЖНОСТИ</span>
+            <h1>Усиль свою любовь</h1>
+            <p>Покупай улучшения за сердечки — мишка будет дарить их ещё быстрее.</p>
+          </div>
+          <div id="shopList" class="shop-list"></div>
+          <div class="shop-footnote"><span>♥</span> сердечки никуда не пропадают — игра запомнит твой прогресс</div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Разделы приложения">
+        <button class="nav-button active" id="gameTab" type="button" aria-current="page">
+          <span class="nav-icon">♡</span><span>Игра</span>
+        </button>
+        <button class="nav-button" id="shopTab" type="button">
+          <span class="nav-icon">✦</span><span>Улучшения</span><span id="shopDot" class="shop-dot" hidden></span>
+        </button>
+      </nav>
+    </div>
+
+    <div id="welcome" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" hidden>
+      <div class="welcome-card">
+        <div class="welcome-top-heart" aria-hidden="true">♥</div>
+        <div class="welcome-eyebrow">маленькое послание для тебя</div>
+        <h1 id="welcomeTitle">Ты у меня самая лучшая</h1>
+        <p>Я очень люблю тебя! Эту игру я сделал для тебя <span class="message-heart">❤️</span></p>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions">
+          <button id="okButton" class="button-soft" type="button">Окей</button>
+          <button id="loveButton" class="button-love" type="button">Я люблю тебя тоже <span>♥</span></button>
+        </div>
+        <div class="welcome-signature">твоё маленькое место счастья</div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

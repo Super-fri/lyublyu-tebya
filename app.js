@@ -5,8 +5,10 @@
   const MAX_OFFLINE_SECONDS = 12 * 60 * 60;
   const OFFLINE_LIMIT_MS = 10 * 60 * 1000;
   const GOLDEN_DURATION_MS = 10 * 60 * 1000;
+  const PRETTY_DURATION_MS = 5 * 60 * 1000;
   const MAX_PARTICLES = 40;
   const MAX_GOLD_BARS = 22;
+  const MAX_FLOWER_PETALS = 22;
 
   const bears = [
     { id: "classic", name: "Мягкий мишка", cost: 0, image: "assets/teddy-hd.svg", icon: "♥", tagline: "Тёплые объятия и сердечки только для тебя.", description: "Добрый друг для уютных предзимних вечеров.", base: 1, particles: ["♥"] },
@@ -45,12 +47,22 @@
     "Ты — моё любимое новогоднее чудо. Нажимай на мишку и собирай его объятия ❤️",
     "Пусть эта игра напоминает, как сильно ты меня радуешь. Люблю тебя! ❤️",
   ];
+  const quizQuestions = [
+    { prompt: "Когда мы познакомились?", options: ["хзшкее", "26 октября", "28 октября"], correct: 1 },
+    { prompt: "Что мы чаще всего говорим друг другу?", hint: "Подсказка: я .... ....", type: "text-or-choice", placeholder: "я .... ....", fallback: "хзшке", isCorrect: value => normalizeAnswer(value) === "я люблю тебя" },
+    { prompt: "Что ты мне чаще всего говоришь на казахском?", type: "text-or-choice", placeholder: "Напиши слово", fallback: "не помню", isCorrect: value => ["душа", "моя душа", "жаным", "жан"].includes(normalizeAnswer(value)) },
+    { prompt: "Сколько мы вместе?", options: ["1 год", "3 месяца", "не особо долго"], correct: 2 },
+    { prompt: "О чём мы мечтаем больше всего?", options: ["стать богатыми", "побыстрее увидеться и навсегда остаться вместе", "хзшке"], correct: 1 },
+    { prompt: "Что я тебе подарил самым первым?", options: ["робуксы хахахах", "мишку", "премиум"], correct: 0 },
+    { prompt: "Когда у меня день рождения?", options: ["01.11", "11.01", "03.11"], correct: 0 },
+  ];
 
   const emptySave = () => ({
     hearts: 0, earned: 0, spent: 0, taps: 0,
     upgrades: { touch: 0, hugs: 0, power: 0 },
     unlockedBears: { classic: true }, activeBear: "classic",
-    flowerNextTryAt: 0, flowerBoostUntil: 0, goldenUntil: 0, flowersEndingSeen: false, lastSavedAt: Date.now(),
+    flowerNextTryAt: 0, flowerBoostUntil: 0, goldRemainingMs: 0, prettyRemainingMs: 0, activeEvent: "",
+    flowersEndingSeen: false, surveyCompleted: false, prettyRewardPending: false, lastSavedAt: Date.now(),
   });
 
   function loadSave() {
@@ -60,24 +72,34 @@
       const base = emptySave();
       const merged = { ...base, ...saved, upgrades: { ...base.upgrades, ...(saved.upgrades || {}) }, unlockedBears: { ...base.unlockedBears, ...(saved.unlockedBears || {}) } };
       merged.flowersEndingSeen = Boolean(merged.flowersEndingSeen);
+      merged.surveyCompleted = Boolean(merged.surveyCompleted);
+      merged.prettyRewardPending = Boolean(merged.prettyRewardPending);
       for (const key of ["hearts", "earned", "spent", "taps"]) merged[key] = Math.max(0, Number(merged[key]) || 0);
       for (const key of Object.keys(merged.upgrades)) merged.upgrades[key] = Math.max(0, Math.floor(Number(merged.upgrades[key]) || 0));
       for (const key of Object.keys(merged.unlockedBears)) merged.unlockedBears[key] = Boolean(merged.unlockedBears[key]);
       if (!bears.some(bear => bear.id === merged.activeBear && merged.unlockedBears[bear.id])) merged.activeBear = "classic";
       const now = Date.now();
-      merged.goldenUntil = Math.max(0, Number(merged.goldenUntil) || 0);
+      const legacyGoldenUntil = Math.max(0, Number(merged.goldenUntil) || 0);
+      merged.goldRemainingMs = Math.max(0, Number(merged.goldRemainingMs) || Math.max(0, legacyGoldenUntil - now));
+      merged.prettyRemainingMs = Math.max(0, Number(merged.prettyRemainingMs) || 0);
+      if (!["gold", "pretty"].includes(merged.activeEvent)) merged.activeEvent = legacyGoldenUntil > now ? "gold" : "";
+      if ((merged.activeEvent === "gold" && merged.goldRemainingMs <= 0) || (merged.activeEvent === "pretty" && merged.prettyRemainingMs <= 0)) merged.activeEvent = "";
+      delete merged.goldenUntil;
       const last = Number(merged.lastSavedAt) || now;
-      const offlineSeconds = Math.max(0, Math.min(MAX_OFFLINE_SECONDS, (now - last) / 1000));
-      const offlineStart = now - offlineSeconds * 1000;
-      const goldenStart = merged.goldenUntil - GOLDEN_DURATION_MS;
-      const goldenOfflineSeconds = Math.max(0, Math.min(now, merged.goldenUntil) - Math.max(offlineStart, goldenStart)) / 1000;
-      const awayHearts = Math.floor(merged.upgrades.hugs * (offlineSeconds + goldenOfflineSeconds * 9));
+      const elapsedMs = Math.max(0, now - last);
+      const offlineSeconds = Math.min(MAX_OFFLINE_SECONDS, elapsedMs / 1000);
+      const activeEventMs = merged.activeEvent === "gold" ? merged.goldRemainingMs : merged.activeEvent === "pretty" ? merged.prettyRemainingMs : 0;
+      const eventOfflineSeconds = Math.min(elapsedMs, activeEventMs) / 1000;
+      const eventMultiplier = merged.activeEvent === "gold" ? 10 : merged.activeEvent === "pretty" ? 100 : 1;
+      const awayHearts = Math.floor(merged.upgrades.hugs * (offlineSeconds + eventOfflineSeconds * (eventMultiplier - 1)));
       if (awayHearts > 0) {
         merged.hearts += awayHearts;
         merged.earned += awayHearts;
         merged.offlineHearts = awayHearts;
       }
-      if (merged.goldenUntil <= now) merged.goldenUntil = 0;
+      if (merged.activeEvent === "gold") merged.goldRemainingMs = Math.max(0, merged.goldRemainingMs - elapsedMs);
+      if (merged.activeEvent === "pretty") merged.prettyRemainingMs = Math.max(0, merged.prettyRemainingMs - elapsedMs);
+      if ((merged.activeEvent === "gold" && merged.goldRemainingMs <= 0) || (merged.activeEvent === "pretty" && merged.prettyRemainingMs <= 0)) merged.activeEvent = "";
       merged.lastSavedAt = now;
       return merged;
     } catch {
@@ -87,6 +109,9 @@
 
   const state = loadSave();
   let pendingFlowersWelcome = Boolean(state.unlockedBears.flowers && !state.flowersEndingSeen);
+  let quizIndex = 0;
+  let quizScore = 0;
+  let lastEventTickAt = Date.now();
   let activeView = "game";
   let shopCategory = "bears";
   let saveTimer = 0;
@@ -95,6 +120,8 @@
   let activeParticles = 0;
   let goldRainTimer = 0;
   const goldBars = new Set();
+  let flowerRainTimer = 0;
+  const flowerPetals = new Set();
   let renderedBearId = "";
   let lastQuoteIndex = -1;
 
@@ -106,9 +133,20 @@
   const welcome = $("welcome");
   const halloweenWelcome = $("halloweenWelcome");
   const flowersWelcome = $("flowersWelcome");
+  const pinkWelcome = $("pinkWelcome");
   const resetConfirm = $("resetConfirm");
   const goldRain = $("goldRain");
+  const flowerRain = $("flowerRain");
   const goldTitle = $("goldTitle");
+  const pinkTitle = $("pinkTitle");
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  const surveyIntro = $("surveyIntro");
+  const quizModal = $("quizModal");
+  const quizHint = $("quizHint");
+  const quizAnswers = $("quizAnswers");
+  const quizResultModal = $("quizResultModal");
+  const quizSuccessActions = $("quizSuccessActions");
+  const quizRetryActions = $("quizRetryActions");
 
   const punchAnimation = teddy.animate([
     { transform: "scale(1, 1) rotate(0deg)" },
@@ -133,12 +171,54 @@
     if (element.textContent !== value) element.textContent = value;
   }
 
+  function normalizeAnswer(value) {
+    return String(value || "").toLocaleLowerCase("ru-RU").replace(/[^\p{L}\s]/gu, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function activeEventMultiplier(eventId = state.activeEvent) {
+    return eventId === "gold" ? 10 : eventId === "pretty" ? 100 : 1;
+  }
+
+  function eventRemainingMs(eventId) {
+    return eventId === "gold" ? state.goldRemainingMs : eventId === "pretty" ? state.prettyRemainingMs : 0;
+  }
+
+  function formatClock(milliseconds) {
+    const totalSeconds = Math.ceil(Math.max(0, milliseconds) / 1000);
+    return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+  }
+
+  function advanceActiveEvent(now = Date.now()) {
+    const elapsed = Math.max(0, now - lastEventTickAt);
+    lastEventTickAt = now;
+    if (!state.activeEvent || elapsed <= 0) return false;
+    const field = state.activeEvent === "gold" ? "goldRemainingMs" : "prettyRemainingMs";
+    state[field] = Math.max(0, state[field] - elapsed);
+    if (state[field] === 0) state.activeEvent = "";
+    return true;
+  }
+
+  function updateEventSwitcher() {
+    const hasGold = state.goldRemainingMs > 0;
+    const hasPretty = state.prettyRemainingMs > 0;
+    $("eventSwitcher").hidden = !hasGold && !hasPretty;
+    $("goldEventButton").hidden = !hasGold;
+    $("pinkEventButton").hidden = !hasPretty;
+    $("goldEventButton").classList.toggle("active", state.activeEvent === "gold");
+    $("pinkEventButton").classList.toggle("active", state.activeEvent === "pretty");
+    $("goldEventButton").setAttribute("aria-pressed", String(state.activeEvent === "gold"));
+    $("pinkEventButton").setAttribute("aria-pressed", String(state.activeEvent === "pretty"));
+    setText("goldEventTimer", formatClock(state.goldRemainingMs));
+    setText("pinkEventTimer", formatClock(state.prettyRemainingMs));
+    $("surveyPrompt").hidden = state.surveyCompleted;
+  }
+
   function clickBoost() {
     return (1 + state.upgrades.touch) * Math.pow(2, state.upgrades.power);
   }
 
   function heartsPerSecond() {
-    return state.upgrades.hugs * (state.goldenUntil > Date.now() ? 10 : 1);
+    return state.upgrades.hugs * activeEventMultiplier();
   }
 
   function costFor(item) {
@@ -151,7 +231,7 @@
 
   function currentTapMultiplier(now = Date.now()) {
     const bear = currentBear();
-    return (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1) * (state.goldenUntil > now ? 10 : 1);
+    return (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1) * activeEventMultiplier();
   }
 
   function levelFor(earned) {
@@ -199,7 +279,8 @@
   function updateHUD() {
     const bear = currentBear();
     const now = Date.now();
-    syncGoldenVisuals(now);
+    syncEventVisuals();
+    updateEventSwitcher();
     setText("balance", formatNumber(state.hearts));
     setText("tapValue", `${bear.randomReward ? "~" : "+"}${formatNumber(expectedBearPayout(bear) * currentTapMultiplier(now))}`);
     setText("perSecond", formatNumber(heartsPerSecond()));
@@ -212,14 +293,15 @@
       renderedBearId = bear.id;
     }
     const effects = [];
-    if (state.goldenUntil > now) {
-      const secondsLeft = Math.ceil((state.goldenUntil - now) / 1000);
-      effects.push(`Золотая бесконечность ×10 · ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`);
+    if (state.activeEvent) {
+      const eventTitle = state.activeEvent === "gold" ? "Золотая бесконечность" : "Эвент прекрасности";
+      effects.push(`${eventTitle} ×${activeEventMultiplier()} · ${formatClock(eventRemainingMs(state.activeEvent))}`);
     }
     if (state.flowerBoostUntil > now) effects.push(`цветочный x3 ещё ${Math.ceil((state.flowerBoostUntil - now) / 1000)} сек.`);
     const tagline = effects.length ? `${bear.tagline} ✨ ${effects.join(" · ")}` : bear.tagline;
     setText("bearTagline", tagline);
-    goldTitle.hidden = state.goldenUntil <= now;
+    goldTitle.hidden = state.activeEvent !== "gold";
+    pinkTitle.hidden = state.activeEvent !== "pretty";
     const quoteIndex = Math.floor(state.taps / 6) % quotes.length;
     if (lastQuoteIndex !== quoteIndex) {
       setText("loveQuote", quotes[quoteIndex]);
@@ -292,6 +374,7 @@
   function persist() {
     if (saveTimer) window.clearTimeout(saveTimer);
     saveTimer = 0;
+    if (advanceActiveEvent()) queueHUDUpdate();
     state.lastSavedAt = Date.now();
     try {
       const { offlineHearts, ...saveData } = state;
@@ -331,17 +414,46 @@
     }, (duration + 1) * 1000);
   }
 
-  function syncGoldenVisuals(now = Date.now()) {
-    const active = state.goldenUntil > now;
-    document.body.classList.toggle("golden-mode", active);
-    if (active && !goldRainTimer) {
+  function spawnFlowerPetal() {
+    if (flowerPetals.size >= MAX_FLOWER_PETALS) return;
+    const petal = document.createElement("span");
+    const duration = 8 + Math.random() * 5;
+    petal.className = "flower-petal";
+    petal.textContent = ["🌸", "🌷", "🌼", "💮", "🌺"][Math.floor(Math.random() * 5)];
+    petal.style.left = `${Math.random() * 100}%`;
+    petal.style.setProperty("--flower-duration", `${duration}s`);
+    petal.style.setProperty("--flower-drift", `${Math.round((Math.random() - .5) * 150)}px`);
+    flowerRain.appendChild(petal);
+    flowerPetals.add(petal);
+    window.setTimeout(() => {
+      petal.remove();
+      flowerPetals.delete(petal);
+    }, (duration + 1) * 1000);
+  }
+
+  function syncEventVisuals() {
+    const goldActive = state.activeEvent === "gold" && eventRemainingMs("gold") > 0;
+    const prettyActive = state.activeEvent === "pretty" && eventRemainingMs("pretty") > 0;
+    document.body.classList.toggle("golden-mode", goldActive);
+    document.body.classList.toggle("pink-mode", prettyActive);
+    themeColorMeta.content = goldActive ? "#382b10" : prettyActive ? "#47243d" : "#0e1720";
+    if (goldActive && !goldRainTimer) {
       spawnGoldBar();
       goldRainTimer = window.setInterval(spawnGoldBar, 600);
-    } else if (!active && goldRainTimer) {
+    } else if (!goldActive && goldRainTimer) {
       window.clearInterval(goldRainTimer);
       goldRainTimer = 0;
       goldRain.replaceChildren();
       goldBars.clear();
+    }
+    if (prettyActive && !flowerRainTimer) {
+      spawnFlowerPetal();
+      flowerRainTimer = window.setInterval(spawnFlowerPetal, 650);
+    } else if (!prettyActive && flowerRainTimer) {
+      window.clearInterval(flowerRainTimer);
+      flowerRainTimer = 0;
+      flowerRain.replaceChildren();
+      flowerPetals.clear();
     }
   }
 
@@ -392,7 +504,7 @@
     const now = Date.now();
     tryFlowerBoost(now);
     const base = bear.randomReward ? rollLuckyReward() : bear.base;
-    const multiplier = (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1);
+    const multiplier = (bear.multiplier || 1) * clickBoost() * (state.flowerBoostUntil > now ? 3 : 1) * activeEventMultiplier();
     const amount = base * multiplier;
     state.hearts += amount;
     state.earned += amount;
@@ -448,7 +560,11 @@
   function closeFlowersWelcome(startGoldenEvent = false) {
     flowersWelcome.hidden = true;
     activeView = "game";
-    if (startGoldenEvent) state.goldenUntil = Date.now() + GOLDEN_DURATION_MS;
+    if (startGoldenEvent) {
+      state.goldRemainingMs = GOLDEN_DURATION_MS;
+      state.activeEvent = "gold";
+      lastEventTickAt = Date.now();
+    }
     render();
     if (startGoldenEvent) {
       persist();
@@ -466,7 +582,118 @@
       state.flowersEndingSeen = true;
       persist();
       flowersWelcome.hidden = false;
+    } else if (state.prettyRewardPending) {
+      pinkWelcome.hidden = false;
     }
+  }
+
+  function openSurvey() {
+    surveyIntro.hidden = false;
+  }
+
+  function startSurvey() {
+    surveyIntro.hidden = true;
+    quizResultModal.hidden = true;
+    quizIndex = 0;
+    quizScore = 0;
+    renderQuizQuestion();
+    quizModal.hidden = false;
+  }
+
+  function addQuizChoice(label, onSelect) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "quiz-choice";
+    button.textContent = label;
+    button.addEventListener("click", onSelect, { once: true });
+    quizAnswers.appendChild(button);
+  }
+
+  function renderQuizQuestion() {
+    const question = quizQuestions[quizIndex];
+    setText("quizProgress", `вопрос ${quizIndex + 1} из ${quizQuestions.length}`);
+    setText("quizQuestion", question.prompt);
+    setText("quizHint", question.hint || "");
+    quizHint.hidden = !question.hint;
+    quizAnswers.replaceChildren();
+
+    if (question.type === "text-or-choice") {
+      const form = document.createElement("form");
+      form.className = "quiz-text-form";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.autocomplete = "off";
+      input.placeholder = question.placeholder;
+      input.setAttribute("aria-label", question.prompt);
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.className = "quiz-choice quiz-submit";
+      submit.textContent = "Ответить";
+      form.append(input, submit);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        answerQuizQuestion(question.isCorrect(input.value));
+      });
+      quizAnswers.appendChild(form);
+      addQuizChoice(question.fallback, () => answerQuizQuestion(false));
+      input.focus();
+      return;
+    }
+
+    question.options.forEach((option, index) => {
+      addQuizChoice(option, () => answerQuizQuestion(index === question.correct));
+    });
+  }
+
+  function answerQuizQuestion(correct) {
+    if (correct) quizScore++;
+    quizIndex++;
+    if (quizIndex >= quizQuestions.length) finishSurvey();
+    else renderQuizQuestion();
+  }
+
+  function finishSurvey() {
+    quizModal.hidden = true;
+    const passed = quizScore >= 4;
+    setText("quizScore", `${quizScore} из ${quizQuestions.length} правильных`);
+    if (passed) {
+      state.surveyCompleted = true;
+      state.prettyRewardPending = true;
+      setText("quizResultTitle", "Ты отлично меня знаешь!");
+      setText("quizResultMessage", "Набрано 4 или больше правильных ответов — твоя награда ждёт тебя 💗");
+      quizSuccessActions.hidden = false;
+      quizRetryActions.hidden = true;
+      persist();
+      updateHUD();
+    } else {
+      setText("quizResultTitle", "Попробуем ещё раз?");
+      setText("quizResultMessage", "Для награды нужно набрать хотя бы 4 правильных ответа. Подсказка: отвечай сердцем 💞");
+      quizSuccessActions.hidden = true;
+      quizRetryActions.hidden = false;
+    }
+    quizResultModal.hidden = false;
+  }
+
+  function activatePrettyEvent() {
+    pinkWelcome.hidden = true;
+    state.prettyRewardPending = false;
+    state.prettyRemainingMs = PRETTY_DURATION_MS;
+    state.activeEvent = "pretty";
+    lastEventTickAt = Date.now();
+    activeView = "game";
+    render();
+    persist();
+    spawnParticles(currentBear());
+    showToast("Эвент прекрасности! x100 на 5 минут 🌸");
+  }
+
+  function selectEvent(eventId) {
+    if (eventRemainingMs(eventId) <= 0) return;
+    advanceActiveEvent();
+    state.activeEvent = eventId;
+    lastEventTickAt = Date.now();
+    render();
+    persist();
   }
 
   function resetProgress() {
@@ -521,6 +748,19 @@
   $("halloweenOkButton").addEventListener("click", () => { halloweenWelcome.hidden = true; });
   $("flowersDismissButton").addEventListener("click", () => closeFlowersWelcome());
   $("goldenLoveButton").addEventListener("click", () => closeFlowersWelcome(true));
+  $("goldEventButton").addEventListener("click", () => selectEvent("gold"));
+  $("pinkEventButton").addEventListener("click", () => selectEvent("pretty"));
+  $("surveyOpenButton").addEventListener("click", openSurvey);
+  $("surveyStartButton").addEventListener("click", startSurvey);
+  $("surveyLaterButton").addEventListener("click", () => { surveyIntro.hidden = true; });
+  $("quizContinueButton").addEventListener("click", () => {
+    quizResultModal.hidden = true;
+    pinkWelcome.hidden = false;
+  });
+  $("quizRetryButton").addEventListener("click", startSurvey);
+  $("quizCloseButton").addEventListener("click", () => { quizResultModal.hidden = true; });
+  $("pinkThanksButton").addEventListener("click", activatePrettyEvent);
+  $("pinkLoveButton").addEventListener("click", activatePrettyEvent);
   $("resetProgressButton").addEventListener("click", () => {
     resetConfirm.hidden = false;
     $("cancelResetButton").focus();
@@ -548,7 +788,7 @@
 
   window.setInterval(() => {
     const now = Date.now();
-    let changed = false;
+    let changed = advanceActiveEvent(now);
     const passiveHearts = heartsPerSecond();
     if (passiveHearts > 0) {
       state.hearts += passiveHearts;
@@ -559,10 +799,6 @@
       state.flowerBoostUntil = 0;
       changed = true;
     }
-    if (state.goldenUntil > 0 && state.goldenUntil <= now) {
-      state.goldenUntil = 0;
-      changed = true;
-    } else if (state.goldenUntil > now) queueHUDUpdate();
     if (changed) {
       queueHUDUpdate();
       scheduleSave();

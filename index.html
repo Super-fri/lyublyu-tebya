@@ -14,6 +14,7 @@
   <body>
     <div class="wallpaper" aria-hidden="true"></div>
     <div id="goldRain" class="gold-rain" aria-hidden="true"></div>
+    <div id="flowerRain" class="flower-rain" aria-hidden="true"></div>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand">
@@ -45,6 +46,7 @@
           <div class="bear-stage" id="bearStage">
             <div class="bear-glow" aria-hidden="true"></div>
             <div id="goldTitle" class="golden-title" hidden>Золотая бесконечность</div>
+            <div id="pinkTitle" class="pink-event-title" hidden>Эвент прекрасности</div>
             <div id="heartParticles" class="heart-particles" aria-hidden="true"></div>
             <button id="tapButton" class="bear-button" type="button" aria-label="Нажми на мишку, чтобы получить сердечки">
               <img id="teddy" src="assets/teddy-hd.svg" alt="Мягкий коричневый мишка" draggable="false" />
@@ -84,6 +86,15 @@
         </section>
       </main>
 
+      <div id="eventSwitcher" class="event-switcher" aria-label="Активные события" hidden>
+        <button id="goldEventButton" class="event-chip gold-event-chip" type="button" aria-pressed="false" hidden>
+          <span aria-hidden="true">✨</span><span>Золотая бесконечность</span><span id="goldEventTimer" class="event-time"></span>
+        </button>
+        <button id="pinkEventButton" class="event-chip pink-event-chip" type="button" aria-pressed="false" hidden>
+          <span aria-hidden="true">🌸</span><span>Эвент прекрасности</span><span id="pinkEventTimer" class="event-time"></span>
+        </button>
+      </div>
+
       <nav class="bottom-nav" aria-label="Разделы приложения">
         <button class="nav-button active" id="gameTab" type="button" aria-current="page">
           <span class="nav-icon">♡</span><span>Игра</span>
@@ -92,6 +103,9 @@
           <span class="nav-icon">✦</span><span>Мишки</span><span id="shopDot" class="shop-dot" hidden></span>
         </button>
       </nav>
+      <div id="surveyPrompt" class="survey-prompt">
+        <button id="surveyOpenButton" class="survey-open-button" type="button">💗 Пройти опрос</button>
+      </div>
     </div>
 
     <div id="welcome" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" hidden>
@@ -130,6 +144,61 @@
         <div class="welcome-actions">
           <button id="flowersDismissButton" class="button-soft" type="button">дыыы</button>
           <button id="goldenLoveButton" class="button-gold" type="button">я тя тоже люблю ♥</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="surveyIntro" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="surveyIntroTitle" hidden>
+      <div class="welcome-card survey-card">
+        <div class="welcome-top-heart survey-icon" aria-hidden="true">💗</div>
+        <div class="welcome-eyebrow">маленькая проверка нашей памяти</div>
+        <h1 id="surveyIntroTitle">Хочешь пройти наш совместный опрос и получить награду?</h1>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions">
+          <button id="surveyStartButton" class="button-pink" type="button">дааа очень хочу</button>
+          <button id="surveyLaterButton" class="button-soft" type="button">как нибудь позже</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="quizModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="quizQuestion" hidden>
+      <div class="welcome-card quiz-card">
+        <div class="welcome-top-heart survey-icon" aria-hidden="true">💞</div>
+        <div id="quizProgress" class="welcome-eyebrow">вопрос 1 из 7</div>
+        <h1 id="quizQuestion"></h1>
+        <p id="quizHint" class="quiz-hint" hidden></p>
+        <div id="quizAnswers" class="quiz-answers"></div>
+      </div>
+    </div>
+
+    <div id="quizResultModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="quizResultTitle" aria-describedby="quizResultMessage" hidden>
+      <div class="welcome-card survey-card">
+        <div class="welcome-top-heart survey-icon" aria-hidden="true">💝</div>
+        <div class="welcome-eyebrow">наш результат</div>
+        <h1 id="quizResultTitle">Опрос завершён</h1>
+        <p id="quizResultMessage"></p>
+        <div id="quizScore" class="quiz-score"></div>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div id="quizSuccessActions" class="welcome-actions" hidden>
+          <button id="quizContinueButton" class="button-pink" type="button">Продолжить</button>
+        </div>
+        <div id="quizRetryActions" class="welcome-actions" hidden>
+          <button id="quizRetryButton" class="button-pink" type="button">Попробовать ещё раз</button>
+          <button id="quizCloseButton" class="button-soft" type="button">Позже</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="pinkWelcome" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pinkWelcomeTitle" aria-describedby="pinkWelcomeMessage" hidden>
+      <div class="welcome-card pink-reward-card">
+        <div class="welcome-top-heart pink-icon" aria-hidden="true">🌸</div>
+        <div class="welcome-eyebrow">подарок за нашу память</div>
+        <h1 id="pinkWelcomeTitle">Милашка ты ж моя!</h1>
+        <p id="pinkWelcomeMessage">Я так люблю тебя! Вот от меня подарок — «Эвент прекрасности» 💗</p>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions">
+          <button id="pinkThanksButton" class="button-pink" type="button">аххахахах спасибки</button>
+          <button id="pinkLoveButton" class="button-pink" type="button">оч люблю тебя</button>
         </div>
       </div>
     </div>

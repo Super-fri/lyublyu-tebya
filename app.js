@@ -17,7 +17,7 @@
     { id: "love", name: "Love U Mode", cost: 1000, image: "assets/bears/love-u.webp", icon: "💘", tagline: "Любовный режим включён на полную!", description: "Тройная любовь поверх остальных усилений.", base: 1, multiplier: 3, particles: ["💘"] },
     { id: "luck", name: "Luck ground мишка", cost: 12000, image: "assets/bears/luck-ground.webp", icon: "🍀", tagline: "Какой подарок выпадет в этот раз?", description: "5% — 100, 30% — 10, 65% — 2 сердечка.", randomReward: true, multiplier: 1, particles: ["🍀", "✨"] },
     { id: "polar", name: "Polar мишка", cost: 50000, image: "assets/bears/polar.webp", icon: "❄️", tagline: "Самый уютный холод севера.", description: "Дарит 30 сердечек за тап, плюс твои усиления.", base: 30, particles: ["❄️", "🩵"] },
-    { id: "flowers", name: "Мишка с цветами", cost: 100000, image: "assets/bears/flowers.webp", icon: "💐", tagline: "Цветы, сердечки и немного волшебства.", description: "100 сердечек и цветы. Раз в 10 минут — шанс 10% получить x3 на 10 секунд.", base: 100, flowers: true, particles: ["🌸", "💐"] },
+    { id: "flowers", name: "Мишка с цветами", cost: 300000, image: "assets/bears/flowers.webp", icon: "💐", tagline: "Цветы, сердечки и немного волшебства.", description: "100 сердечек и цветы. Раз в 10 минут — шанс 10% получить x3 на 10 секунд.", base: 100, flowers: true, particles: ["🌸", "💐"] },
   ];
 
   const upgrades = [

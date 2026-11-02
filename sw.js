@@ -1,4 +1,4 @@
-const CACHE = "lyublyu-tebya-v1";
+const CACHE = "lyublyu-tebya-v2";
 const FILES = [
   "./",
   "./index.html",
@@ -8,7 +8,16 @@ const FILES = [
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/teddy.png",
+  "./assets/teddy-hd.svg",
   "./assets/telegram-pattern.png",
+  "./assets/bears/christmas.webp",
+  "./assets/bears/builder.webp",
+  "./assets/bears/football.webp",
+  "./assets/bears/halloween.webp",
+  "./assets/bears/love-u.webp",
+  "./assets/bears/luck-ground.webp",
+  "./assets/bears/polar.webp",
+  "./assets/bears/flowers.webp",
 ];
 
 self.addEventListener("install", event => {

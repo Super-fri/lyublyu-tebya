@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0e1720" />
-    <meta name="description" content="Маленькая игра, сделанная с любовью." />
+    <meta name="description" content="Зимняя игра For_m_Love — мишки, сердечки и немного волшебства." />
     <link rel="icon" href="assets/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="assets/icon-192.png" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="stylesheet" href="styles.css" />
-    <title>Люблю тебя</title>
+    <title>For_m_Love новогодний</title>
   </head>
   <body>
     <div class="wallpaper" aria-hidden="true"></div>
@@ -18,8 +18,8 @@
         <div class="brand">
           <img class="brand-icon" src="assets/icon-192.png" alt="" />
           <div>
-            <div class="brand-name">Люблю тебя</div>
-            <div class="brand-note">маленькая игра для тебя</div>
+            <div class="brand-name">For_m_Love новогодний</div>
+            <div class="brand-note">зимняя игра, полная нежности</div>
           </div>
         </div>
         <div class="balance" aria-live="polite" aria-label="Твои сердечки">
@@ -30,10 +30,10 @@
 
       <main>
         <section id="gameView" class="view game-view" aria-label="Игра">
-          <div class="hello-line"><span class="tiny-sparkle">✦</span> для самой любимой <span class="tiny-sparkle">✦</span></div>
+          <div class="hello-line"><span class="tiny-sparkle">✦</span> для самого любимого чуда <span class="tiny-sparkle">✦</span></div>
           <div class="love-card">
-            <div class="love-heading">Сердечки для тебя</div>
-            <div class="love-subtitle">Каждое нажатие — ещё одно «люблю»</div>
+            <div class="love-heading" id="bearName">Сердечки для тебя</div>
+            <div class="love-subtitle" id="bearTagline">Каждое нажатие — ещё одно «люблю»</div>
             <div class="level-row">
               <span id="levelName">Маленькое чудо</span>
               <span id="levelProgressText">0 / 25</span>
@@ -45,7 +45,7 @@
             <div class="bear-glow" aria-hidden="true"></div>
             <div id="heartParticles" class="heart-particles" aria-hidden="true"></div>
             <button id="tapButton" class="bear-button" type="button" aria-label="Нажми на мишку, чтобы получить сердечки">
-              <img id="teddy" src="assets/teddy.png" alt="Игрушечный мишка" draggable="false" />
+              <img id="teddy" src="assets/teddy-hd.svg" alt="Мягкий коричневый мишка" draggable="false" />
             </button>
             <div id="tapHint" class="tap-hint">нажми на мишку <span>♡</span></div>
           </div>
@@ -58,17 +58,26 @@
             <div class="stat-card"><span class="stat-icon">✧</span><span class="stat-value" id="tapCount">0</span><span class="stat-label">объятий</span></div>
           </div>
 
-          <div class="love-note"><span>♥</span> мишка передаёт тебе привет</div>
+          <div class="love-note"><span>♥</span> <span id="loveQuote">Мишка передаёт тебе привет</span></div>
         </section>
 
         <section id="shopView" class="view shop-view" aria-label="Магазин улучшений" hidden>
           <div class="shop-intro">
-            <span class="shop-kicker">МАГАЗИН НЕЖНОСТИ</span>
-            <h1>Усиль свою любовь</h1>
-            <p>Покупай улучшения за сердечки — мишка будет дарить их ещё быстрее.</p>
+            <span class="shop-kicker">ЗИМНЯЯ МЕДВЕЖЬЯ ЛАВКА</span>
+            <h1>Выбирай своего мишку</h1>
+            <p>Собирай сердечки, открывай новых друзей и дари каждому свой стиль.</p>
           </div>
-          <div id="shopList" class="shop-list"></div>
-          <div class="shop-footnote"><span>♥</span> сердечки никуда не пропадают — игра запомнит твой прогресс</div>
+          <div class="shop-switch" role="tablist" aria-label="Категории магазина">
+            <button id="bearsCategory" class="shop-switch-button active" type="button" role="tab" aria-selected="true">Мишки</button>
+            <button id="boostsCategory" class="shop-switch-button" type="button" role="tab" aria-selected="false">Усиления</button>
+          </div>
+          <section id="bearSection" class="shop-section" aria-label="Коллекция мишек">
+            <div id="bearList" class="bear-shop-list"></div>
+          </section>
+          <section id="boostSection" class="shop-section" aria-label="Усиления" hidden>
+            <div id="boostList" class="shop-list"></div>
+          </section>
+          <div class="shop-footnote"><span>♥</span> каждый медвежонок ждёт именно тебя</div>
         </section>
       </main>
 
@@ -77,7 +86,7 @@
           <span class="nav-icon">♡</span><span>Игра</span>
         </button>
         <button class="nav-button" id="shopTab" type="button">
-          <span class="nav-icon">✦</span><span>Улучшения</span><span id="shopDot" class="shop-dot" hidden></span>
+          <span class="nav-icon">✦</span><span>Мишки</span><span id="shopDot" class="shop-dot" hidden></span>
         </button>
       </nav>
     </div>
@@ -86,14 +95,25 @@
       <div class="welcome-card">
         <div class="welcome-top-heart" aria-hidden="true">♥</div>
         <div class="welcome-eyebrow">маленькое послание для тебя</div>
-        <h1 id="welcomeTitle">Ты у меня самая лучшая</h1>
-        <p>Я очень люблю тебя! Эту игру я сделал для тебя <span class="message-heart">❤️</span></p>
+        <h1 id="welcomeTitle">Ты моё любимое чудо</h1>
+        <p id="welcomeMessage">Пусть каждый зимний день будет чуточку теплее. Эту игру я сделал для тебя <span class="message-heart">❤️</span></p>
         <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
         <div class="welcome-actions">
           <button id="okButton" class="button-soft" type="button">Окей</button>
           <button id="loveButton" class="button-love" type="button">Я люблю тебя тоже <span>♥</span></button>
         </div>
         <div class="welcome-signature">твоё маленькое место счастья</div>
+      </div>
+    </div>
+
+    <div id="halloweenWelcome" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="halloweenTitle" hidden>
+      <div class="welcome-card special-card">
+        <div class="welcome-top-heart special-icon" aria-hidden="true">🦇</div>
+        <div class="welcome-eyebrow">первый подарок от меня</div>
+        <h1 id="halloweenTitle">Ооо, я рад, что ты его купила!</h1>
+        <p>Это первый мишка, которого я тебе подарил ;3</p>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions"><button id="halloweenOkButton" class="button-love" type="button">Окей <span>♥</span></button></div>
       </div>
     </div>
 

@@ -94,6 +94,7 @@
   const particlesLayer = $("heartParticles");
   const welcome = $("welcome");
   const halloweenWelcome = $("halloweenWelcome");
+  const resetConfirm = $("resetConfirm");
 
   const punchAnimation = teddy.animate([
     { transform: "scale(1, 1) rotate(0deg)" },
@@ -395,6 +396,30 @@
     render();
   }
 
+  function resetProgress() {
+    if (saveTimer) window.clearTimeout(saveTimer);
+    saveTimer = 0;
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch {
+      resetConfirm.hidden = true;
+      showToast("Не удалось удалить сохранение на этом устройстве");
+      return;
+    }
+    Object.assign(state, emptySave());
+    delete state.offlineHearts;
+    activeView = "game";
+    shopCategory = "bears";
+    renderedBearId = "";
+    lastQuoteIndex = -1;
+    particlesLayer.replaceChildren();
+    activeParticles = 0;
+    resetConfirm.hidden = true;
+    halloweenWelcome.hidden = true;
+    render();
+    welcome.hidden = false;
+  }
+
   function setShopCategory(category) {
     shopCategory = category;
     renderShop();
@@ -420,6 +445,21 @@
     spawnParticles(currentBear());
   });
   $("halloweenOkButton").addEventListener("click", () => { halloweenWelcome.hidden = true; });
+  $("resetProgressButton").addEventListener("click", () => {
+    resetConfirm.hidden = false;
+    $("cancelResetButton").focus();
+  });
+  $("cancelResetButton").addEventListener("click", () => {
+    resetConfirm.hidden = true;
+    $("resetProgressButton").focus();
+  });
+  $("confirmResetButton").addEventListener("click", resetProgress);
+  resetConfirm.addEventListener("click", event => {
+    if (event.target === resetConfirm) resetConfirm.hidden = true;
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !resetConfirm.hidden) resetConfirm.hidden = true;
+  });
 
   $("welcomeMessage").textContent = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
   render();

@@ -78,6 +78,7 @@
             <div id="boostList" class="shop-list"></div>
           </section>
           <div class="shop-footnote"><span>♥</span> каждый медвежонок ждёт именно тебя</div>
+          <button id="resetProgressButton" class="reset-progress-button" type="button">↺ Сбросить прогресс</button>
         </section>
       </main>
 
@@ -114,6 +115,20 @@
         <p>Это первый мишка, которого я тебе подарил ;3</p>
         <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
         <div class="welcome-actions"><button id="halloweenOkButton" class="button-love" type="button">Окей <span>♥</span></button></div>
+      </div>
+    </div>
+
+    <div id="resetConfirm" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resetTitle" aria-describedby="resetDescription" hidden>
+      <div class="welcome-card reset-card">
+        <div class="welcome-top-heart reset-icon" aria-hidden="true">↺</div>
+        <div class="welcome-eyebrow">начать с чистого листа</div>
+        <h1 id="resetTitle">Сбросить прогресс?</h1>
+        <p id="resetDescription">Все сердечки, усиления и купленные мишки будут удалены. Вернуть их не получится.</p>
+        <div class="welcome-divider"><span></span><i>✦</i><span></span></div>
+        <div class="welcome-actions reset-actions">
+          <button id="cancelResetButton" class="button-soft" type="button">Оставить прогресс</button>
+          <button id="confirmResetButton" class="button-reset" type="button">Да, сбросить всё</button>
+        </div>
       </div>
     </div>
 

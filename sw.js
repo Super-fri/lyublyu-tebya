@@ -1,4 +1,4 @@
-const CACHE = "lyublyu-tebya-v2";
+const CACHE = "lyublyu-tebya-v3";
 const FILES = [
   "./",
   "./index.html",
